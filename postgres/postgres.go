@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/auknl/warehouse/data"
 	"github.com/auknl/warehouse/db"
+	"github.com/auknl/warehouse/request"
 	"github.com/sirupsen/logrus"
 	"strconv"
 )
@@ -66,16 +67,17 @@ func (inventory *PInventoryDB) Open() error {
 
 //GetInventory gets all inventory/stock info in system
 func (inventory *PInventoryDB) GetInventory(ctx context.Context) (error, []data.Stock) {
-	inventory.config.Logger.Debug("GetInventory() entry...")
+	log := inventory.config.Logger.WithField("rid", request.GetRID(ctx))
+	log.Debug("GetInventory() entry...")
 	transaction, err := inventory.db.BeginTx(ctx, nil)
 	if err != nil {
-		inventory.config.Logger.WithField("err", err).Error("Transaction begin failed")
+		log.WithField("err", err).Error("Transaction begin failed")
 		return err, nil
 	}
 	defer transaction.Rollback() //get operation
 	rows, err := transaction.Query(getInventory)
 	if err != nil {
-		inventory.config.Logger.WithField("err", err).Error("GetInventory query failed")
+		log.WithField("err", err).Error("GetInventory query failed")
 		return err, nil
 	}
 
@@ -86,7 +88,7 @@ func (inventory *PInventoryDB) GetInventory(ctx context.Context) (error, []data.
 	for rows.Next() {
 		err = rows.Scan(&artId, &artName, &stock)
 		if err != nil {
-			inventory.config.Logger.WithField("err", err).Error("Cannot scan the table")
+			log.WithField("err", err).Error("Cannot scan the table")
 			return err, nil
 		}
 		stocks = append(stocks, data.Stock{ArtId: artId, Name: artName, Stock: stock})
@@ -94,26 +96,27 @@ func (inventory *PInventoryDB) GetInventory(ctx context.Context) (error, []data.
 
 	err = rows.Err()
 	if err != nil {
-		inventory.config.Logger.WithField("err", err).Error("Error happened during the iteration")
+		log.WithField("err", err).Error("Error happened during the iteration")
 		return err, nil
 	}
 
-	inventory.config.Logger.WithField("number of inventory record to be returned: ", len(stocks)).Debug("GetInventory(), returns the stocks...")
+	log.WithField("number of inventory record to be returned: ", len(stocks)).Debug("GetInventory(), returns the stocks...")
 	return nil, stocks
 }
 
 //GetProductStock gets the stock of the available products in system
 func (inventory *PInventoryDB) GetProductStock(ctx context.Context) (error, data.ProductStocks) {
-	inventory.config.Logger.Debug("GetProductStock() entry...")
+	log := inventory.config.Logger.WithField("rid", request.GetRID(ctx))
+	log.Debug("GetProductStock() entry...")
 	transaction, err := inventory.db.BeginTx(ctx, nil)
 	if err != nil {
-		inventory.config.Logger.WithField("err", err).Error("Transaction begin failed")
+		log.WithField("err", err).Error("Transaction begin failed")
 		return err, nil
 	}
 	defer transaction.Rollback()
 	rows, err := transaction.Query(getProductStock)
 	if err != nil {
-		inventory.config.Logger.WithField("err", err).Error("GetProductStock query failed")
+		log.WithField("err", err).Error("GetProductStock query failed")
 		return err, nil
 	}
 
@@ -124,7 +127,7 @@ func (inventory *PInventoryDB) GetProductStock(ctx context.Context) (error, data
 	for rows.Next() {
 		err = rows.Scan(&productName, &stock)
 		if err != nil {
-			inventory.config.Logger.WithField("err", err).Error("Cannot scan the table")
+			log.WithField("err", err).Error("Cannot scan the table")
 			return err, nil
 		}
 		stockNo, _ := strconv.ParseInt(stock, 10, 64)
@@ -135,20 +138,21 @@ func (inventory *PInventoryDB) GetProductStock(ctx context.Context) (error, data
 
 	err = rows.Err()
 	if err != nil {
-		inventory.config.Logger.WithField("err", err).Error("Error happened during the getProductStock iteration")
+		log.WithField("err", err).Error("Error happened during the getProductStock iteration")
 		return err, nil
 	}
 
-	inventory.config.Logger.WithField("number of product to be returned: ", len(stocks)).Debug("GetProductStock(), returns the stocks...")
+	log.WithField("number of product to be returned: ", len(stocks)).Debug("GetProductStock(), returns the stocks...")
 	return nil, stocks
 }
 
 //UploadProducts inserts the product info into db
 func (inventory *PInventoryDB) UploadProducts(ctx context.Context, product data.Products) (error, int) {
-	inventory.config.Logger.Debug("UploadProducts() entry...")
+	log := inventory.config.Logger.WithField("rid", request.GetRID(ctx))
+	log.Debug("UploadProducts() entry...")
 	transaction, err := inventory.db.BeginTx(ctx, nil)
 	if err != nil {
-		inventory.config.Logger.WithField("err", err).Error("Transaction begin failed")
+		log.WithField("err", err).Error("Transaction begin failed")
 		return err, 0
 	}
 	insertedRecord := 0
@@ -157,7 +161,7 @@ func (inventory *PInventoryDB) UploadProducts(ctx context.Context, product data.
 			_, err := transaction.ExecContext(ctx, insertProduct, product.Name, contain.ArtId, contain.AmountOf)
 			if err != nil {
 				transaction.Rollback()
-				inventory.config.Logger.WithField("err: ", err).Error("UploadProducts(), failed to insert record...")
+				log.WithField("err: ", err).Error("UploadProducts(), failed to insert record...")
 				return err, 0
 				//TODO: Failed products can save and keep uploading till the end of list. Then the unsuccessful ones can serve the client
 			}
@@ -166,48 +170,50 @@ func (inventory *PInventoryDB) UploadProducts(ctx context.Context, product data.
 	err = transaction.Commit()
 	if err != nil {
 		transaction.Rollback()
-		inventory.config.Logger.WithField("err: ", err).Error("Transaction commit failed to insert product...")
+		log.WithField("err: ", err).Error("Transaction commit failed to insert product...")
 	}
 	insertedRecord = len(product.Products)
 
-	inventory.config.Logger.WithField("number of product uploaded: ", insertedRecord).Debug("UploadProducts(), uploaded products...")
+	log.WithField("number of product uploaded: ", insertedRecord).Debug("UploadProducts(), uploaded products...")
 	return nil, insertedRecord
 }
 
 //UploadInventory inserts the inventory info into db
 func (inventory *PInventoryDB) UploadInventory(ctx context.Context, inventoryToInsert data.Inventory) (error, int) {
-	inventory.config.Logger.Debug("UploadInventory() entry...")
+	log := inventory.config.Logger.WithField("rid", request.GetRID(ctx))
+	log.Debug("UploadInventory() entry...")
 	transaction, err := inventory.db.BeginTx(ctx, nil)
 	if err != nil {
-		inventory.config.Logger.WithField("err", err).Error("Transaction begin failed")
+		log.WithField("err", err).Error("Transaction begin failed")
 		return err, 0
 	}
 	for _, inventoryRec := range inventoryToInsert.Inventory {
 		_, err := transaction.ExecContext(ctx, insertStock, inventoryRec.ArtId, inventoryRec.Name, inventoryRec.Stock)
 		if err != nil {
 			transaction.Rollback()
-			inventory.config.Logger.WithField("err: ", err).Error("UploadInventory failed to insert record...")
+			log.WithField("err: ", err).Error("UploadInventory failed to insert record...")
 			return err, 0
 		}
 	}
 	err = transaction.Commit()
 	if err != nil {
 		transaction.Rollback()
-		inventory.config.Logger.WithField("err: ", err).Error("Failed to commit...")
+		log.WithField("err: ", err).Error("Failed to commit...")
 		return nil, 0
 	}
 	insertedRecord := len(inventoryToInsert.Inventory)
 
-	inventory.config.Logger.WithField("number of inventory uploaded: ", insertedRecord).Debug("UploadInventory(), uploaded products...")
+	log.WithField("number of inventory uploaded: ", insertedRecord).Debug("UploadInventory(), uploaded products...")
 	return nil, insertedRecord
 }
 
 //SellProduct checks if the product exist and in stock. If true then update inventory accordingly
 func (inventory *PInventoryDB) SellProduct(ctx context.Context, productName string) error {
-	inventory.config.Logger.Debug("sellProduct() entry...")
+	log := inventory.config.Logger.WithField("rid", request.GetRID(ctx))
+	log.Debug("sellProduct() entry...")
 	transaction, err := inventory.db.BeginTx(ctx, nil)
 	if err != nil {
-		inventory.config.Logger.WithField("err", err).Error("Transaction begin failed")
+		log.WithField("err", err).Error("Transaction begin failed")
 		return err
 	}
 
@@ -215,18 +221,18 @@ func (inventory *PInventoryDB) SellProduct(ctx context.Context, productName stri
 	// do not sell if the product does not exist
 	rows, errQuery := transaction.Query(productExist, productName)
 	if errQuery != nil {
-		inventory.config.Logger.WithField("err", err).Error("ProductExist query failed")
+		log.WithField("err", err).Error("ProductExist query failed")
 		return err
 	}
 	var productExist int
 	for rows.Next() {
 		err = rows.Scan(&productExist)
 		if err != nil {
-			inventory.config.Logger.WithField("err", err).Error("Cannot scan the table")
+			log.WithField("err", err).Error("Cannot scan the table")
 			return err
 		}
 		if productExist == 0 {
-			inventory.config.Logger.WithField("err", err).Info("product is not found in system")
+			log.WithField("err", err).Info("product is not found in system")
 			return errors.New("this product is not in system, cannot be sold")
 		}
 	}
@@ -234,18 +240,18 @@ func (inventory *PInventoryDB) SellProduct(ctx context.Context, productName stri
 	// do not sell if the product is not in stock
 	rows, errQuery = transaction.Query(inStock, productName)
 	if errQuery != nil {
-		inventory.config.Logger.WithField("err", err).Error("InStock query failed")
+		log.WithField("err", err).Error("InStock query failed")
 		return err
 	}
 	var stockNo int
 	for rows.Next() {
 		err = rows.Scan(&stockNo)
 		if err != nil {
-			inventory.config.Logger.WithField("err", err).Error("Cannot scan the table")
+			log.WithField("err", err).Error("Cannot scan the table")
 			return err
 		}
 		if stockNo != 0 {
-			inventory.config.Logger.WithField("err", err).Info("product items are out of stock")
+			log.WithField("err", err).Info("product items are out of stock")
 			return errors.New("this product is not in stock, cannot be sold")
 		}
 	}
@@ -254,16 +260,16 @@ func (inventory *PInventoryDB) SellProduct(ctx context.Context, productName stri
 	_, err = transaction.ExecContext(ctx, updateSaleInfo, productName)
 	if err != nil {
 		transaction.Rollback()
-		inventory.config.Logger.WithField("err: ", err).Error("SellProduct(), failed to update inventory...")
+		log.WithField("err: ", err).Error("SellProduct(), failed to update inventory...")
 		return err
 	}
 	err = transaction.Commit()
 	if err != nil {
 		transaction.Rollback()
-		inventory.config.Logger.WithField("err: ", err).Error("SellProduct(), failed to commit...")
+		log.WithField("err: ", err).Error("SellProduct(), failed to commit...")
 		return err
 	}
 
-	inventory.config.Logger.WithField("product is sold: ", productName).Debug("sellProduct(), sold the product and update the inventory...")
+	log.WithField("product is sold: ", productName).Debug("sellProduct(), sold the product and update the inventory...")
 	return nil
 }

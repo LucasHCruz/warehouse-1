@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/auknl/warehouse/data"
 	"github.com/auknl/warehouse/db"
+	"github.com/auknl/warehouse/request"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
@@ -21,7 +21,7 @@ type Server struct {
 	Logger    *logrus.Entry
 }
 
-//Configuration keeps required info for running server
+// Configuration keeps required info for running server
 type Configuration struct {
 	BackendTimeout string `default:"25s"`
 	ListenAddress  string `default:":8080"`
@@ -34,7 +34,6 @@ func NewServer(inventory db.Inventory, configuration Configuration, logger *logr
 
 	router.Use(
 		gin.Recovery(),
-		server.setRID,
 		server.setDeadline, //TODO: use deadline while querying db
 	)
 
@@ -67,23 +66,13 @@ func (server *Server) setDeadline(context *gin.Context) {
 	context.Set("deadline", deadline)
 }
 
-//setRID sets the rid by generating or using the existing one
-func (server *Server) setRID(context *gin.Context) {
-	_, exists := context.Get("rid")
-	if !exists {
-		id := uuid.New()
-		context.Set("rid", id.String())
-	}
-
-}
-
 //isHealthy checks if the service is available to respond
 func (server *Server) isHealthy(context *gin.Context) {
-	rid := context.GetString("rid")
-	server.Logger.WithField("rid:", rid).Debug("isHealthy")
+	log := server.Logger.WithField("rid", request.GetRID(context))
+	log.Debug("isHealthy")
 	err := server.Inventory.Ping()
 	if err != nil {
-		server.Logger.WithField("err", err.Error()).Error("IsHealthy ping failed")
+		log.WithField("err", err.Error()).Error("IsHealthy ping failed")
 		context.JSON(http.StatusInternalServerError, ResponseError{
 			Message: "unhealthy endpoint",
 		})
@@ -97,8 +86,8 @@ func (server *Server) isHealthy(context *gin.Context) {
 
 //getInventory provides inventory/stock info
 func (server *Server) getInventory(context *gin.Context) {
-	rid := context.GetString("rid")
-	server.Logger.WithField("rid:", rid).Debug("getInventory")
+	log := server.Logger.WithField("rid", request.GetRID(context))
+	log.Debug("getInventory")
 	err, stocks := server.Inventory.GetInventory(context)
 	if err != nil {
 		context.JSON(http.StatusNotFound, ResponseError{
@@ -115,8 +104,8 @@ func (server *Server) getInventory(context *gin.Context) {
 
 // getProductStock provides the stock info of available products in system
 func (server *Server) getProductStock(context *gin.Context) {
-	rid := context.GetString("rid")
-	server.Logger.WithField("rid:", rid).Debug("getProductStock")
+	log := server.Logger.WithField("rid", request.GetRID(context))
+	log.Debug("getProductStock")
 	err, stocks := server.Inventory.GetProductStock(context)
 	if err != nil {
 		context.JSON(http.StatusNotFound, ResponseError{
@@ -142,8 +131,8 @@ func (server *Server) getProductStock(context *gin.Context) {
 
 //uploadProducts inserts given products to system
 func (server *Server) uploadProducts(context *gin.Context) {
-	rid := context.GetString("rid")
-	server.Logger.WithField("rid:", rid).Debug("uploadProducts")
+	log := server.Logger.WithField("rid", request.GetRID(context))
+	log.Debug("uploadProducts")
 	var products data.Products
 	jsonData, err := ioutil.ReadAll(context.Request.Body)
 	if err != nil {
@@ -179,8 +168,8 @@ func (server *Server) uploadProducts(context *gin.Context) {
 
 //uploadInventory inserts given inventory/stock info to system
 func (server *Server) uploadInventory(context *gin.Context) {
-	rid := context.GetString("rid")
-	server.Logger.WithField("rid:", rid).Debug("uploadInventory")
+	log := server.Logger.WithField("rid", request.GetRID(context))
+	log.Debug("uploadInventory")
 	var inventory data.Inventory
 	jsonData, err := ioutil.ReadAll(context.Request.Body)
 	if err != nil {
@@ -215,8 +204,8 @@ func (server *Server) uploadInventory(context *gin.Context) {
 
 //sellProduct handles the sell product request
 func (server *Server) sellProduct(context *gin.Context) {
-	rid := context.GetString("rid")
-	server.Logger.WithField("rid:", rid).Debug("sellProduct")
+	log := server.Logger.WithField("rid", request.GetRID(context))
+	log.Debug("sellProduct")
 	productName := context.Param(productName)
 	err := server.Inventory.SellProduct(context, productName)
 	if err != nil {
