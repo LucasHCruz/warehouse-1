@@ -20,7 +20,6 @@ import (
 //go:generate mockgen -package=mocks -destination=./mocks/mock_Inventory.go -source=../db/inventory.go
 func TestServer_getInventory(t *testing.T) {
 	controller := gomock.NewController(t)
-	//defer controller.Finish()
 	recorder := httptest.NewRecorder()
 	context, engine := gin.CreateTestContext(recorder)
 	inventory := mocks.NewMockInventory(controller)

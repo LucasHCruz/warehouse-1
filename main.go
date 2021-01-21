@@ -9,6 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+//configuration keeps all config info for warehouse service
 type configuration struct {
 	LogLevel       string `mapstructure:"LOGLEVEL" default:"info"`
 	Version        string `mapstructure:"VERSION" required:"true"`
@@ -40,14 +41,23 @@ func main() {
 	var inventory db.Inventory
 
 	if config.DBDriver == "postgres" {
-		config := postgres.Config{Logger: loggerEntry, Driver: config.DBDriver, Host: config.DBHost, Port: config.DBPort, User: config.DBUser, Password: config.DBPassword, Dbname: config.DBName}
+		config := postgres.Config{
+			Logger:   loggerEntry,
+			Driver:   config.DBDriver,
+			Host:     config.DBHost,
+			Port:     config.DBPort,
+			User:     config.DBUser,
+			Password: config.DBPassword,
+			Dbname:   config.DBName,
+		}
 		inventory = postgres.NewPInventory(config)
 	}
 
-	server := api.NewServer(inventory)
-	server.Config.ListenAddress = config.ListenAddress
-	server.Config.BackendTimeout = config.BackendTimeout
-	server.Logger = loggerEntry
+	server := api.NewServer(inventory,
+		api.Configuration{
+			ListenAddress:  config.ListenAddress,
+			BackendTimeout: config.BackendTimeout},
+		loggerEntry)
 
 	err = server.Start()
 	if err != nil {
@@ -58,7 +68,7 @@ func main() {
 //setConfig gets the required config from env and fills the config
 func setConfig(logger *logrus.Logger) configuration {
 	var config configuration
-	err := envconfig.Process("ISC", &config) //Inventory service config
+	err := envconfig.Process("ISC", &config) //Warehouse service config
 	if err != nil {
 		logger.WithField("err", err).Error("Could not load required config")
 	}

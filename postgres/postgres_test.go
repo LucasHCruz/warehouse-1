@@ -151,6 +151,7 @@ func uploadProduct(inventorydb db.Inventory, ctx context.Context) {
 
 func TestPInventoryDB_UploadInventory(t *testing.T) {
 	pool, resource := initDB(logger)
+	defer closeDB(pool, resource)
 	conn := DockerDBConn.Conn
 	recorder := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(recorder)
@@ -165,14 +166,15 @@ func TestPInventoryDB_UploadInventory(t *testing.T) {
 	err, stock := inventory.UploadInventory(ctx, inventoryData)
 	assert.Equal(t, stock, len(inventoryData.Inventory))
 	assert.Equal(t, err, nil)
-	closeDB(pool, resource)
+
 }
 
 func TestPInventoryDB_UploadProducts(t *testing.T) {
 	pool, resource := initDB(logger)
+	defer closeDB(pool, resource)
 	conn := DockerDBConn.Conn
 	recorder := httptest.NewRecorder()
-	context, _ := gin.CreateTestContext(recorder)
+	ctx, _ := gin.CreateTestContext(recorder)
 	inventory := &PInventoryDB{
 		db:     conn,
 		config: Config{Logger: logrus.NewEntry(logrus.New())},
@@ -182,16 +184,17 @@ func TestPInventoryDB_UploadProducts(t *testing.T) {
 	json.Unmarshal([]byte(file), &products)
 
 	//Product table has foreign key from Inventory table
-	uploadInventory(inventory, context)
+	uploadInventory(inventory, ctx)
 
-	err, stock := inventory.UploadProducts(context, products)
+	err, stock := inventory.UploadProducts(ctx, products)
 	assert.Equal(t, stock, len(products.Products))
 	assert.Equal(t, err, nil)
-	closeDB(pool, resource)
+
 }
 
 func TestPInventoryDB_GetInventory(t *testing.T) {
 	pool, resource := initDB(logger)
+	defer closeDB(pool, resource)
 	conn := DockerDBConn.Conn
 	recorder := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(recorder)
@@ -207,11 +210,12 @@ func TestPInventoryDB_GetInventory(t *testing.T) {
 		assert.Equal(t, stock[i], inventoryData.Inventory[i])
 	}
 	assert.Equal(t, err, nil)
-	closeDB(pool, resource)
+
 }
 
 func TestPInventoryDB_GetProductStock(t *testing.T) {
 	pool, resource := initDB(logger)
+	defer closeDB(pool, resource)
 	conn := DockerDBConn.Conn
 	recorder := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(recorder)
@@ -226,11 +230,12 @@ func TestPInventoryDB_GetProductStock(t *testing.T) {
 	err, stockOfProduct := inventory.GetProductStock(ctx)
 	assert.Equal(t, len(stockOfProduct), 2)
 	assert.Equal(t, err, nil)
-	closeDB(pool, resource)
+
 }
 
 func TestPInventoryDB_SellProduct(t *testing.T) {
 	pool, resource := initDB(logger)
+	defer closeDB(pool, resource)
 	conn := DockerDBConn.Conn
 	recorder := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(recorder)
@@ -245,11 +250,12 @@ func TestPInventoryDB_SellProduct(t *testing.T) {
 
 	err := inventory.SellProduct(ctx, "Dinning Table")
 	assert.Equal(t, err, nil)
-	closeDB(pool, resource)
+
 }
 
 func TestPInventoryDB_GetProductStockOOS(t *testing.T) { //After One "Dinning Table" Product Out Of Stock
 	pool, resource := initDB(logger)
+	defer closeDB(pool, resource)
 	conn := DockerDBConn.Conn
 	recorder := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(recorder)
@@ -268,11 +274,12 @@ func TestPInventoryDB_GetProductStockOOS(t *testing.T) { //After One "Dinning Ta
 	err, stockOfProduct := inventory.GetProductStock(ctx)
 	assert.Equal(t, len(stockOfProduct), 1)
 	assert.Equal(t, err, nil)
-	closeDB(pool, resource)
+
 }
 
 func TestPInventoryDB_Ping(t *testing.T) {
 	pool, resource := initDB(logger)
+	defer closeDB(pool, resource)
 	conn := DockerDBConn.Conn
 	inventory := &PInventoryDB{
 		db:     conn,
@@ -280,11 +287,12 @@ func TestPInventoryDB_Ping(t *testing.T) {
 	}
 	err := inventory.Ping()
 	assert.Equal(t, err, nil)
-	closeDB(pool, resource)
+
 }
 
 func TestPInventoryDB_Open(t *testing.T) {
 	pool, resource := initDB(logger)
+	defer closeDB(pool, resource)
 	conn := DockerDBConn.Conn
 	inventory := &PInventoryDB{
 		db:     conn,
@@ -292,11 +300,12 @@ func TestPInventoryDB_Open(t *testing.T) {
 	}
 	err := inventory.Open()
 	assert.Equal(t, err, nil)
-	closeDB(pool, resource)
+
 }
 
 func TestPInventoryDB_SellOOSProduct(t *testing.T) { //Try to sell "Dinning Table" which is  Out Of Stock
 	pool, resource := initDB(logger)
+	defer closeDB(pool, resource)
 	conn := DockerDBConn.Conn
 	recorder := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(recorder)
@@ -315,11 +324,12 @@ func TestPInventoryDB_SellOOSProduct(t *testing.T) { //Try to sell "Dinning Tabl
 	if err != nil {
 		assert.Equal(t, err.Error(), "this product is not in stock, cannot be sold")
 	}
-	closeDB(pool, resource)
+
 }
 
 func TestPInventoryDB_SellProductNotExist(t *testing.T) { //Try to sell a product that is not in system
 	pool, resource := initDB(logger)
+	defer closeDB(pool, resource)
 	conn := DockerDBConn.Conn
 	recorder := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(recorder)
@@ -336,5 +346,5 @@ func TestPInventoryDB_SellProductNotExist(t *testing.T) { //Try to sell a produc
 	if err != nil {
 		assert.Equal(t, err.Error(), "this product is not in system, cannot be sold")
 	}
-	closeDB(pool, resource)
+
 }

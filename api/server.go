@@ -28,7 +28,7 @@ type Configuration struct {
 }
 
 // NewServer creates a new HTTP server and set up routing.
-func NewServer(inventory db.Inventory) *Server {
+func NewServer(inventory db.Inventory, configuration Configuration, logger *logrus.Entry) *Server {
 	server := &Server{Inventory: inventory}
 	router := gin.New()
 
@@ -46,6 +46,8 @@ func NewServer(inventory db.Inventory) *Server {
 	router.POST("warehouse/v1/product/:"+productName, server.sellProduct)
 
 	server.router = router
+	server.Config = configuration
+	server.Logger = logger
 	return server
 }
 
@@ -58,7 +60,7 @@ func (server *Server) Start() error {
 func (server *Server) setDeadline(context *gin.Context) {
 	backendTimeout, err := time.ParseDuration(server.Config.BackendTimeout)
 	if err != nil {
-		server.Logger.WithField("err", err).Fatal("Could not parse backend timeout duration")
+		server.Logger.WithField("err", err).Error("Could not parse backend timeout duration")
 	}
 
 	deadline := time.Now().Add(backendTimeout)
@@ -81,7 +83,7 @@ func (server *Server) isHealthy(context *gin.Context) {
 	server.Logger.WithField("rid:", rid).Debug("isHealthy")
 	err := server.Inventory.Ping()
 	if err != nil {
-		server.Logger.WithField("err", err.Error()).Error("isHealthy ping failed")
+		server.Logger.WithField("err", err.Error()).Error("IsHealthy ping failed")
 		context.JSON(http.StatusInternalServerError, ResponseError{
 			Message: "unhealthy endpoint",
 		})
@@ -103,12 +105,12 @@ func (server *Server) getInventory(context *gin.Context) {
 			Message: err.Error(),
 		})
 		return
-	} else {
-		context.JSON(http.StatusOK, ResponseProduct{
-			Inventory: stocks,
-		})
-		return
 	}
+
+	context.JSON(http.StatusOK, ResponseProduct{
+		Inventory: stocks,
+	})
+	return
 }
 
 // getProductStock provides the stock info of available products in system
@@ -121,20 +123,21 @@ func (server *Server) getProductStock(context *gin.Context) {
 			Message: err.Error(),
 		})
 		return
-	} else {
-		var product ResponseProduct
-		if len(stocks) == 0 {
-			product = ResponseProduct{
-				Message: "No product in stock",
-			}
-		} else {
-			product = ResponseProduct{
-				ProductStocks: stocks,
-			}
-		}
-		context.JSON(http.StatusOK, product)
-		return
 	}
+
+	var product ResponseProduct
+	if len(stocks) == 0 {
+		product = ResponseProduct{
+			Message: "No product in stock",
+		}
+	} else {
+		product = ResponseProduct{
+			ProductStocks: stocks,
+		}
+	}
+	context.JSON(http.StatusOK, product)
+	return
+
 }
 
 //uploadProducts inserts given products to system
@@ -143,6 +146,13 @@ func (server *Server) uploadProducts(context *gin.Context) {
 	server.Logger.WithField("rid:", rid).Debug("uploadProducts")
 	var products data.Products
 	jsonData, err := ioutil.ReadAll(context.Request.Body)
+	if err != nil {
+		context.JSON(http.StatusBadRequest, ResponseError{
+			Message: err.Error(),
+		})
+		return
+	}
+
 	err = json.Unmarshal(jsonData, &products)
 	if err != nil {
 		context.JSON(http.StatusBadRequest, ResponseError{
@@ -158,13 +168,13 @@ func (server *Server) uploadProducts(context *gin.Context) {
 			Message: err.Error(),
 		})
 		return
-	} else {
-		message := fmt.Sprintf("%d product inserted", insertedRecord)
-		context.JSON(http.StatusOK, ResponseProduct{
-			Message: message,
-		})
-		return
 	}
+	message := fmt.Sprintf("%d product inserted", insertedRecord)
+	context.JSON(http.StatusOK, ResponseProduct{
+		Message: message,
+	})
+	return
+
 }
 
 //uploadInventory inserts given inventory/stock info to system
@@ -173,6 +183,12 @@ func (server *Server) uploadInventory(context *gin.Context) {
 	server.Logger.WithField("rid:", rid).Debug("uploadInventory")
 	var inventory data.Inventory
 	jsonData, err := ioutil.ReadAll(context.Request.Body)
+	if err != nil {
+		context.JSON(http.StatusBadRequest, ResponseError{
+			Message: err.Error(),
+		})
+		return
+	}
 	err = json.Unmarshal(jsonData, &inventory)
 	if err != nil {
 		context.JSON(http.StatusBadRequest, ResponseError{
@@ -188,13 +204,13 @@ func (server *Server) uploadInventory(context *gin.Context) {
 			Message: err.Error(),
 		})
 		return
-	} else {
-		message := fmt.Sprintf("%d item inserted", insertedInventory)
-		context.JSON(http.StatusOK, ResponseProduct{
-			Message: message,
-		})
-		return
 	}
+
+	message := fmt.Sprintf("%d item inserted", insertedInventory)
+	context.JSON(http.StatusOK, ResponseProduct{
+		Message: message,
+	})
+	return
 }
 
 //sellProduct handles the sell product request
@@ -208,11 +224,10 @@ func (server *Server) sellProduct(context *gin.Context) {
 			Message: err.Error(),
 		})
 		return
-	} else {
-		message := fmt.Sprintf("Product %s is sold and inventory is updated accordingly", productName)
-		context.JSON(http.StatusOK, ResponseProduct{
-			Message: message,
-		})
-		return
 	}
+	message := fmt.Sprintf("Product %s is sold and inventory is updated accordingly", productName)
+	context.JSON(http.StatusOK, ResponseProduct{
+		Message: message,
+	})
+	return
 }
