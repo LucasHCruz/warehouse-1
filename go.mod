@@ -1,6 +1,6 @@
-module github.com/aukaskavalci/IKEA_assesment
+module github.com/auknl/warehouse
 
-go 1.13
+go 1.15
 
 require (
 	github.com/Microsoft/go-winio v0.4.16 // indirect

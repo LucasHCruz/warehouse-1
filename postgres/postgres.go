@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/aukaskavalci/IKEA_assesment/data"
-	"github.com/aukaskavalci/IKEA_assesment/db"
+	"github.com/auknl/warehouse/data"
+	"github.com/auknl/warehouse/db"
 	"github.com/sirupsen/logrus"
 	"strconv"
 )

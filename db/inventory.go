@@ -2,7 +2,7 @@ package db
 
 import (
 	"context"
-	"github.com/aukaskavalci/IKEA_assesment/data"
+	"github.com/auknl/warehouse/data"
 )
 
 type Inventory interface {

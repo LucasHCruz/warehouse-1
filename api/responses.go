@@ -1,6 +1,6 @@
 package api
 
-import "github.com/aukaskavalci/IKEA_assesment/data"
+import "github.com/auknl/warehouse/data"
 
 // ResponseError is the only type of error response any user should ever get
 type ResponseError struct {

@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/aukaskavalci/IKEA_assesment/api"
-	"github.com/aukaskavalci/IKEA_assesment/db"
-	"github.com/aukaskavalci/IKEA_assesment/postgres"
+	"github.com/auknl/warehouse/api"
+	"github.com/auknl/warehouse/db"
+	"github.com/auknl/warehouse/postgres"
 	"github.com/kelseyhightower/envconfig"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"

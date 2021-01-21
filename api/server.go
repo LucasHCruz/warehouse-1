@@ -3,8 +3,8 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/aukaskavalci/IKEA_assesment/data"
-	"github.com/aukaskavalci/IKEA_assesment/db"
+	"github.com/auknl/warehouse/data"
+	"github.com/auknl/warehouse/db"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
