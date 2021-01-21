@@ -25,8 +25,8 @@ jobs:
 
       # Build and push image to Google Container Registry
       - name: Build
-        run: gcloud builds submit --tag gcr.eu/$PROJECT_ID/$PROJECT_ID:$GITHUB_SHA
+        run: gcloud builds submit --tag gcr.io/$PROJECT_ID/$PROJECT_ID:$GITHUB_SHA
 
       - name: Deploy
-        run: gcloud run deploy $PROJECT_ID --image gcr.eu/$PROJECT_ID/warehouse:$GITHUB_SHA --platform managed --region $RUN_REGION --add-cloudsql-instances=${DBHOST}
+        run: gcloud run deploy $PROJECT_ID --image gcr.io/$PROJECT_ID/warehouse:$GITHUB_SHA --platform managed --region $RUN_REGION --add-cloudsql-instances=${DBHOST}
 
