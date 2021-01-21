@@ -17,7 +17,7 @@ import (
 	"testing"
 )
 
-//go:generate mockgen -package=mocks -destination=./mocks/mock_Inventory.go -source=../db/inventory.go
+//go:generate go run github.com/golang/mock/mockgen -package=mocks -destination=./mocks/mock_Inventory.go -source=../db/inventory.go
 func TestServer_getInventory(t *testing.T) {
 	controller := gomock.NewController(t)
 	recorder := httptest.NewRecorder()
