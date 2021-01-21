@@ -48,7 +48,7 @@ func (inventory *PInventoryDB) Ping() error {
 //Open opens a postgres database
 func (inventory *PInventoryDB) Open() error {
 	inventory.config.Logger.Debug("Open() entry...")
-	psqlCredentials := fmt.Sprintf("host=/cloudsql/%s port=%s user=%s "+
+	psqlCredentials := fmt.Sprintf("host=%s port=%s user=%s "+
 		"password=%s dbname=%s sslmode=disable",
 		inventory.config.Host, inventory.config.Port, inventory.config.User, inventory.config.Password, inventory.config.Dbname)
 

@@ -38,12 +38,12 @@ func NewServer(inventory db.Inventory) *Server {
 		server.setDeadline, //TODO: use deadline while querying db
 	)
 
-	router.GET("v1/health", server.isHealthy)
-	router.GET("v1/inventory", server.getInventory)
-	router.GET("v1/product", server.getProductStock)
-	router.POST("v1/product", server.uploadProducts)
-	router.POST("v1/inventory", server.uploadInventory)
-	router.POST("v1/product/:"+productName, server.sellProduct)
+	router.GET("warehouse/v1/health", server.isHealthy)
+	router.GET("warehouse/v1/inventory", server.getInventory)
+	router.GET("warehouse/v1/product", server.getProductStock)
+	router.POST("warehouse/v1/product", server.uploadProducts)
+	router.POST("warehouse/v1/inventory", server.uploadInventory)
+	router.POST("warehouse/v1/product/:"+productName, server.sellProduct)
 
 	server.router = router
 	return server
