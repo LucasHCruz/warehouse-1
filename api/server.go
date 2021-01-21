@@ -81,6 +81,7 @@ func (server *Server) isHealthy(context *gin.Context) {
 	server.Logger.WithField("rid:", rid).Debug("isHealthy")
 	err := server.Inventory.Ping()
 	if err != nil {
+		server.Logger.WithField("err", err.Error()).Error("isHealthy ping failed")
 		context.JSON(http.StatusInternalServerError, ResponseError{
 			Message: "unhealthy endpoint",
 		})
