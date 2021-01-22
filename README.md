@@ -9,6 +9,7 @@ For the deployment pipeline there are three secrets needs to be added in Secret 
 All action yml files can be found under workflows folder.
 
 ![Go](https://github.com/auknl/warehouse/workflows/Go/badge.svg?branch=main)
+![Deploy to Cloud Run](https://github.com/auknl/warehouse/workflows/Deploy%20to%20Cloud%20Run/badge.svg?branch=main)
 
 ### Google Cloud Run
 To be able use Google Cloud systems first an account and a new project needed. Google provides up to $300 free credits to explore its services.   
