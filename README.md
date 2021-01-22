@@ -8,6 +8,8 @@ There are two actions called Go and Deploy To Cloud Run. Go action is responsibl
 For the deployment pipeline there are three secrets needs to be added in Secret from repository settings as `DBHOST`, `GCP_PROJECT_ID`, `GCP_SA_KEY_JSON`.
 All action yml files can be found under workflows folder.
 
+![Go](https://github.com/auknl/warehouse/workflows/Go/badge.svg?branch=main)
+
 ### Google Cloud Run
 To be able use Google Cloud systems first an account and a new project needed. Google provides up to $300 free credits to explore its services.   
 For the configurations of project and service there are two reference pages are used.
