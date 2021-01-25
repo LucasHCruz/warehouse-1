@@ -231,3 +231,5 @@ curl --request POST \
   --url https://warehouse-3klf3eut5a-ez.a.run.app/warehouse/v1/product/Dining%20Chair \
   --header 'Content-Type: application/json'
 ```
+
+Here is my blog post about the project https://aysenur-ulubas90.medium.com/github-action-integration-with-gcr-for-go-application-be15176d837 
