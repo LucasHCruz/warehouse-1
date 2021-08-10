@@ -56,6 +56,7 @@ func (inventory *PInventoryDB) Open() error {
 		inventory.config.Host, inventory.config.Port, inventory.config.User, inventory.config.Password, inventory.config.Dbname)
 
 	conn, err := sql.Open(inventory.config.Driver, psqlCredentials)
+
 	if err != nil {
 		inventory.config.Logger.WithField("err: ", err).Error("Sql open failed")
 		return err
