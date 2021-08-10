@@ -30,6 +30,7 @@ There are four main functionalities can be executed against the endpoint.
 GET /warehouse/v1/health
 
 ```
+
 ------
 
 - Get all Stock info from inventory.
